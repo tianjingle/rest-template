@@ -1,0 +1,8 @@
+rest:
+  http:
+    timeout: 1500
+    read:
+      timeout: 6000
+    connnection:
+      request:
+        timeout: 200

@@ -1,4 +1,4 @@
-package com.inclination.util.rest;
+package com.inclination.http.exception;
 
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.http.HttpHeaders;

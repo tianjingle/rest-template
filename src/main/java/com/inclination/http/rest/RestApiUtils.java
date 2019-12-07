@@ -1,8 +1,9 @@
-package com.inclination.util.rest;
+package com.inclination.http.rest;
 
 import com.alibaba.fastjson.JSON;
+import com.inclination.http.exception.RestClientException;
 import lombok.extern.slf4j.Slf4j;
-import com.inclination.config.RestTemplateConfig;
+import com.inclination.http.config.RestTemplateConfig;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,4 +1,4 @@
-package com.inclination;
+package com.inclination.http;
 
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +10,6 @@ import java.lang.annotation.*;
 @Documented
 @Inherited
 @Configuration
-@ComponentScan("com.inclination")
+@ComponentScan("com.inclination.http")
 public @interface EnableRestTemplate {
 }

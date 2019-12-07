@@ -1,4 +1,4 @@
-package com.inclination.properties;
+package com.inclination.http.properties;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;

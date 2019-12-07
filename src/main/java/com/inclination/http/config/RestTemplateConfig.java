@@ -1,6 +1,6 @@
-package com.inclination.config;
+package com.inclination.http.config;
 
-import com.inclination.properties.RestTemplateProperties;
+import com.inclination.http.properties.RestTemplateProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.Header;
 import org.apache.http.client.HttpClient;
