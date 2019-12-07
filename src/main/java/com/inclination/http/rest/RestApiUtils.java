@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import com.inclination.http.config.RestTemplateConfig;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.*;
@@ -23,13 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created with IntelliJ IDEA.
- *
- * @author: Apple
- * @date: 2019/2/27
- * @time: 19:37
- * To change this templates use File | Settings | File Templates.
- * @description:
+ * @author: jason
  */
 @Slf4j
 @Component
@@ -54,10 +49,12 @@ public class RestApiUtils {
      * 获取一个包含cookie的头
      * @param cookieList
      */
-    public HttpHeaders buildBasicCookieHeaders(List<String> cookieList) {
+    public HttpHeaders buildBasicCookieHeaders(List<String> cookieList,boolean isIgnore) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.put(HttpHeaders.COOKIE, cookieList);
-        httpHeaders.set("ignore-identity","true");
+        if (isIgnore){
+            httpHeaders.set("ignore-identity","true");
+        }
         return httpHeaders;
     }
 
@@ -209,6 +206,7 @@ public class RestApiUtils {
     }
 
     /**
+     * 不上送参数的get请求，使用这个
      * get请求，通过url和参数，得到返回对象
      * @param url 请求的路径
      * @param responseType 返回值的类型
@@ -225,7 +223,7 @@ public class RestApiUtils {
     }
 
     /**
-     * 通过传入object或者map来自动调用外围接口，如果是object则发送json
+     * 通过传入object或者map来自动调用外围接口，map表示发送post请求，其他类型的数据类型发送json格式的数据
      * @param url 接口地址
      * @param body 上送的报文
      * @param responseType 返回值类型
@@ -245,20 +243,29 @@ public class RestApiUtils {
 
 
     /**
-     * 通过往http中添加accesstoken的方式来获取对象
+     * 通过往http中添加token的方式来获取对象
      * @param url 请求的路径
      * @param token token值
      * @param responseType 返回值的类型
      * @param <T> T
      * @return T
      */
-    public <T> T getForObjectByAccessToken(String url, Object body,String token, Class<T> responseType) {
+    public <T> T getForObjectByAccessToken(String url, Object body,String accessToken,String token, Class<T> responseType) {
         HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("accesstoken", token);
-        HttpEntity<String> httpEntity = new HttpEntity<>(null, httpHeaders);
-        HttpEntity<?> requestEntity = new HttpEntity(body);
-        requestEntity = convert(requestEntity);
-        return doGetObjectByAccessToken(url,requestEntity,responseType);
+        HttpEntity<?> requestEntity=null;
+        StringBuffer sb=new StringBuffer(url);
+        if (!Strings.isEmpty(accessToken)){
+            httpHeaders.add(accessToken, token);
+        }
+        if (body instanceof Map){
+            sb.append(doParseUrl((Map) body));
+        }else{
+            requestEntity= new HttpEntity(body, httpHeaders);
+            requestEntity = convert(requestEntity);
+            return doGetObjectByAccessToken(sb.toString(),requestEntity,responseType);
+        }
+        requestEntity=new HttpEntity<>(httpHeaders);
+        return doGetObjectByAccessToken(sb.toString(),requestEntity,responseType);
     }
 
     /**
@@ -269,10 +276,18 @@ public class RestApiUtils {
      * @param <T> 接受值的类型
      * @return t
      */
-    public <T> T getForObjectByCookie(String url, List<String> cookieList, Class<T> responseType) {
-        HttpHeaders httpHeaders=buildBasicCookieHeaders(cookieList);
-        HttpEntity<String> httpEntity = new HttpEntity<>(null,httpHeaders);
-       return doGetObjectByAccessToken(url,httpEntity,responseType);
+    public <T> T getForObjectByCookie(String url,Object body,List<String> cookieList,boolean isIgnore, Class<T> responseType) {
+        StringBuffer sb=new StringBuffer(url);
+        HttpHeaders httpHeaders=buildBasicCookieHeaders(cookieList,isIgnore);
+        HttpEntity<?> httpEntity=null;
+        if (body instanceof Map){
+            sb.append(doParseUrl((Map)body));
+            httpEntity=new HttpEntity<>(null,httpHeaders);
+            return doGetObjectByAccessToken(sb.toString(),httpEntity,responseType);
+        }
+        httpEntity= new HttpEntity(body, httpHeaders);
+        httpEntity = convert(httpEntity);
+       return doGetObjectByAccessToken(sb.toString(),httpEntity,responseType);
     }
 
     /**
@@ -286,6 +301,7 @@ public class RestApiUtils {
     public <T> T postForObject(String url, Map<String, Object> paramMap, Class<T> responseType) {
         try {
             String responseBody = restTemplate.postForObject(url, paramMap, String.class);
+            log.warn(responseBody);
             return JSON.parseObject(responseBody, responseType);
         }catch (Exception e){
             throw new RestClientException(e);
@@ -318,7 +334,7 @@ public class RestApiUtils {
      * @param <T> 返回类型
      * @return 返回
      */
-    public <T> T postForEntity(String url, Object param, Class<T> responseType) {
+    public <T> T postForEntityJson(String url, Object param, Class<T> responseType) {
         HttpHeaders httpHeaders = buildBasicJsonHeaders();
         HttpEntity<String> httpEntity = new HttpEntity<String>(JSON.toJSONString(param),httpHeaders);
         try {
